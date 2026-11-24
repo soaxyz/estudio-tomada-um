@@ -40,8 +40,7 @@ const MENSAGEM = 'Olá! Vi a página do estúdio e quero reservar um horário de
     var d = document.documentElement;
     var reduzir = matchMedia('(prefers-reduced-motion: reduce)').matches;
     var n = navigator, fraco = (n.deviceMemory && n.deviceMemory < 4) || (n.hardwareConcurrency && n.hardwareConcurrency < 4) || (n.connection && n.connection.saveData);
-    var gl = false;
-    try { var c = document.createElement('canvas'), x = c.getContext('webgl2') || c.getContext('webgl'); gl = !!x; var l = x && x.getExtension('WEBGL_lose_context'); l && l.loseContext(); } catch (e) {}
+    var gl = 'WebGLRenderingContext' in window; // o teste real acontece ao abrir a cena; se falhar, a página volta para a versão sem 3D
     if (reduzir) d.classList.add('quieto');
     if (!reduzir && !fraco && gl) d.classList.add('tem-3d');
   })();
@@ -251,13 +250,15 @@ html:not(.vivo) .passos .ponto{left:100%}
 .final-grade{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:40px;align-items:center}
 .final h2{font-size:clamp(2.3rem,4.6vw,4rem);letter-spacing:-.035em;max-width:14ch}
 .final p{color:rgba(255,255,255,.86);margin:1.2rem 0 2rem;max-width:32rem;font-size:1.1rem}
-.final .nota-btn{color:rgba(255,255,255,.8)}
+.final .nota-btn{color:#fff}
 .final .final-visual{position:relative;min-height:380px}
 .cena-pronta .final .poster{opacity:0}
 
 /* Rodapé */
 .rodape{background:#15110F;color:var(--claro-2);padding:72px 0 120px;overflow:hidden}
 .rodape .gigante{font:800 clamp(4.5rem,17vw,15rem)/.8 var(--t-display);letter-spacing:-.06em;color:#221C19;white-space:nowrap;margin-top:40px;user-select:none}
+.rodape .gigante span::before{content:"tomada"}
+.rodape .gigante b::before{content:"um"}
 .rodape .gigante b{color:#3A1711;font-weight:800}
 .rodape-linha{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 32px;font-size:.92rem}
 .rodape .marca{color:var(--claro)}
@@ -618,7 +619,7 @@ html:not(.vivo) .passos .ponto{left:100%}
       <p>© 2026 Tomada Um</p>
       <p>Fotos de pessoas na seção “Para quem”: StockSnap (CC0).</p>
     </div>
-    <div class="gigante" aria-hidden="true">tomada<b>um</b></div>
+    <div class="gigante" aria-hidden="true"><span></span><b></b></div>
   </div>
 </footer>
 
@@ -689,15 +690,16 @@ html:not(.vivo) .passos .ponto{left:100%}
   if (d.classList.contains('quieto')) return;
   addEventListener('load', function () {
     var ocioso = window.requestIdleCallback || function (f) { return setTimeout(f, 300); };
-    ocioso(function () { import('./js/vivo.min.js').then(function (m) { m.iniciar(); }).catch(function () {}); }, { timeout: 2000 });
-    if (!d.classList.contains('tem-3d')) return;
     var feito = false;
     function carregar() {
       if (feito) return; feito = true;
+      import('./js/vivo.min.js').then(function (m) { return m.iniciar(); }).catch(function () {});
+      if (!d.classList.contains('tem-3d')) return;
       import('./js/cena.min.js').then(function (m) {
         m.iniciar({ canvas: document.getElementById('cena'), aoPronto: function () { d.classList.add('cena-pronta'); } });
       }).catch(function () { d.classList.remove('tem-3d'); });
     }
+    // computador: assim que o navegador folga; celular: no primeiro toque ou rolagem (a página já está pronta para ler)
     if (matchMedia('(pointer: fine)').matches) ocioso(carregar, { timeout: 2500 });
     else ['scroll', 'touchstart', 'pointerdown'].forEach(function (ev) { addEventListener(ev, carregar, { once: true, passive: true }); });
   });
