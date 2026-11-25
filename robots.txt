@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://soaxyz.github.io/estudio-tomada-um/sitemap.xml
